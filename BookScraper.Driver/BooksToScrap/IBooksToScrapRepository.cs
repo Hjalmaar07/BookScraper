@@ -2,5 +2,6 @@
 {
     public interface IBooksToScrapRepository
     {
+        public void GetAllBooks();
     }
 }

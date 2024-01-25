@@ -13,6 +13,7 @@ IHost _host = Host.CreateDefaultBuilder().ConfigureServices(
     })
     .Build();
 var app = _host.Services.GetService<IBookService>();
+app.GetBooks();
 
 
 Console.WriteLine("Press Enter to exit...");
