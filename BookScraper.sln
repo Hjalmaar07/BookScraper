@@ -3,11 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookScraper.Application", "BookScraper\BookScraper.Application.csproj", "{7B55C20B-388F-4898-8D23-638FF6FB7949}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookScraper.Application", "BookScraper\BookScraper.Application.csproj", "{7B55C20B-388F-4898-8D23-638FF6FB7949}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookScraper.Domain", "BookScraper.Domain\BookScraper.Domain.csproj", "{0457EECB-96AA-447C-A3F0-D22961AF1EB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookScraper.Domain", "BookScraper.Domain\BookScraper.Domain.csproj", "{0457EECB-96AA-447C-A3F0-D22961AF1EB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookScraper.Driver", "BookScraper.Driver\BookScraper.Driver.csproj", "{2C21E163-1A65-4572-80B3-2F21B438F3E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookScraper.Driver", "BookScraper.Driver\BookScraper.Driver.csproj", "{2C21E163-1A65-4572-80B3-2F21B438F3E3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{B94C0B79-9DFB-4C09-A219-E45EFAF00FFF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{19F49678-FEB8-429F-9B0F-B079DE9BE370}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Driver", "Driver", "{6FA6402C-23C2-41D5-A0FB-A8EE9ABA5BD6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +36,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7B55C20B-388F-4898-8D23-638FF6FB7949} = {B94C0B79-9DFB-4C09-A219-E45EFAF00FFF}
+		{0457EECB-96AA-447C-A3F0-D22961AF1EB6} = {19F49678-FEB8-429F-9B0F-B079DE9BE370}
+		{2C21E163-1A65-4572-80B3-2F21B438F3E3} = {6FA6402C-23C2-41D5-A0FB-A8EE9ABA5BD6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8D93D618-54AD-428D-A90C-A802DE970E30}
