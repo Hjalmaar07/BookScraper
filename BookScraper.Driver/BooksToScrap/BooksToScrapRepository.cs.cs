@@ -1,6 +1,5 @@
 ﻿using BookScraper.Driver.BooksToScrap.Model;
 using HtmlAgilityPack;
-using System.Net.Sockets;
 
 namespace BookScraper.Driver.BooksToScrap;
 
@@ -25,9 +24,16 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     private static async Task<string> CallUrlAsync(string url)
     {
-        HttpClient client = new HttpClient();
-        var response = await client.GetStringAsync(url);
-        return response;
+        try
+        {
+            HttpClient client = new HttpClient();
+            var response = await client.GetStringAsync(url);
+            return response;
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
     }
 
     private void CreateHtmlDocument(string htmlResult)
