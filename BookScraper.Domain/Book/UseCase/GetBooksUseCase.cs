@@ -13,7 +13,7 @@ namespace BookScraper.Domain.Book.UseCase
 
         public void Run()
         {
-            _booksToScrapRepository.GetAllBooks();
+            _booksToScrapRepository.GetAllPages();
         }
     }
 }

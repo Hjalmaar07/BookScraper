@@ -1,7 +1,10 @@
-﻿namespace BookScraper.Driver.BooksToScrap
+﻿using BookScraper.Driver.BooksToScrap.Model;
+
+namespace BookScraper.Driver.BooksToScrap
 {
     public interface IBooksToScrapRepository
     {
-        public void GetAllBooks();
+        public Task<IEnumerable<Page>> GetAllPages(string homeUrl);
+        public Task<IEnumerable<Thumbnail>> GetAllThumbnails(string pageUrl);
     }
 }
