@@ -8,18 +8,18 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     private const string PageUrl = "https://books.toscrape.com/";
     private HtmlDocument _document = new HtmlDocument();
 
-    public async Task<IEnumerable<Page>> GetAllPages(string homeUrl)
+    public async Task<List<Page>> GetAllPagesAsync(string homeUrl)
     {
         var htmlResult = await CallUrlAsync(homeUrl);
         CreateHtmlDocument(htmlResult);
         return ParsePagesUrls();
     }
 
-    public async Task<IEnumerable<Thumbnail>> GetAllThumbnails(string pageUrl)
+    public async Task<List<Thumbnail>> GetAllThumbnailsAsync(string pageUrl, string name)
     {
         var htmlResult = await CallUrlAsync(pageUrl);
         CreateHtmlDocument(htmlResult);
-        return ParseThumbnailsUrls();
+        return ParseThumbnailsUrls(name);
     }
 
     private static async Task<string> CallUrlAsync(string url)
@@ -41,7 +41,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         _document.LoadHtml(htmlResult);
     }
 
-    private IEnumerable<Page> ParsePagesUrls()
+    private List<Page> ParsePagesUrls()
     {
         List<Page> pages = new List<Page>();
         var links = _document.DocumentNode.Descendants("a")
@@ -60,7 +60,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         return pages;
     }
 
-    private IEnumerable<Thumbnail> ParseThumbnailsUrls()
+    private List<Thumbnail> ParseThumbnailsUrls(string name)
     {
         List<Thumbnail> thumbnails = new List<Thumbnail>();
         var links = _document.DocumentNode.Descendants("img")
@@ -71,7 +71,8 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         {
             thumbnails.Add(new Thumbnail 
             { 
-                Url = PageUrl + link.GetAttributeValue("src", "") 
+                Url = PageUrl + link.GetAttributeValue("src", ""),
+                Name = name
             });
         }
 

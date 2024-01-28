@@ -18,7 +18,7 @@ public class BooksToScrapUnitTests
     [Test]
     public async Task GivenCorrectUrl_WhenGetAllPages_ThenListOfPagesIsReturned()
     {
-        var result = await _repository.GetAllPages(PageUrl);
+        var result = await _repository.GetAllPagesAsync(PageUrl);
 
         Assert.IsNotNull(result);
         Assert.That(!string.IsNullOrEmpty(result.FirstOrDefault().Name));
@@ -28,7 +28,7 @@ public class BooksToScrapUnitTests
     [Test]
     public async Task GivenWrongUrl_WhenGetAllPages_ThenExceptionIsThrown()
     {
-        Assert.ThrowsAsync<Exception>(() => _repository.GetAllPages(""));
+        Assert.ThrowsAsync<Exception>(() => _repository.GetAllPagesAsync(""));
     }
     
 }

@@ -4,6 +4,6 @@ namespace BookScraper.Driver.BooksToScrap;
 
 public interface IBooksToScrapRepository
 {
-    public Task<IEnumerable<Page>> GetAllPages(string homeUrl);
-    public Task<IEnumerable<Thumbnail>> GetAllThumbnails(string pageUrl);
+    public Task<List<Page>> GetAllPagesAsync(string homeUrl);
+    public Task<List<Thumbnail>> GetAllThumbnailsAsync(string pageUrlm, string name);
 }
