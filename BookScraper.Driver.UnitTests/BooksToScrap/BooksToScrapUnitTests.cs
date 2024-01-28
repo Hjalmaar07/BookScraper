@@ -21,7 +21,7 @@ public class BooksToScrapUnitTests
         var result = await _repository.GetAllPagesAsync(PageUrl);
 
         Assert.IsNotNull(result);
-        Assert.That(!string.IsNullOrEmpty(result.FirstOrDefault().Name));
+        Assert.That(!string.IsNullOrEmpty(result.FirstOrDefault().Genre));
         Assert.That(!string.IsNullOrEmpty(result.FirstOrDefault().Url));
     }
 

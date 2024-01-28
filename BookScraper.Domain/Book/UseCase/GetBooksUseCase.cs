@@ -18,7 +18,8 @@ namespace BookScraper.Domain.Book.UseCase
         public async void Run()
         {
             await GetAllPagesAsync();
-            await GetAllThumbnailsAsync();
+            await GetAllThumbnailsUrlsAsync();
+            await DownloadAllThumbnails();
         }
 
         private async Task GetAllPagesAsync()
@@ -26,13 +27,18 @@ namespace BookScraper.Domain.Book.UseCase
             _pages = await _booksToScrapRepository.GetAllPagesAsync("https://books.toscrape.com/");
         }
 
-        private async Task GetAllThumbnailsAsync()
+        private async Task GetAllThumbnailsUrlsAsync()
         {
             foreach (var page in _pages)
             {
-                var result = await _booksToScrapRepository.GetAllThumbnailsAsync(page.Url, page.Name);
+                var result = await _booksToScrapRepository.GetAllThumbnailsUrlsAsync(page.Url, page.Genre);
                 _thumbnails.AddRange(result);
             }
+        }
+
+        private async Task DownloadAllThumbnails()
+        {
+            _booksToScrapRepository.DownloadAllThumbnails(_thumbnails);
         }
     }
 }
