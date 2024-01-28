@@ -3,6 +3,8 @@ using BookScraper.Domain.Book.UseCase;
 using BookScraper.Driver.BooksToScrap;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Net;
+using System.Text;
 
 IHost _host = Host.CreateDefaultBuilder().ConfigureServices(
     services =>

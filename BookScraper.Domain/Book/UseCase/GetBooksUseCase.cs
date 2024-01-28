@@ -24,7 +24,7 @@ namespace BookScraper.Domain.Book.UseCase
 
         private async Task GetAllPagesAsync()
         {
-            _pages = await _booksToScrapRepository.GetAllPagesAsync("https://books.toscrape.com/");
+            _pages = await _booksToScrapRepository.GetAllPagesAsync();
         }
 
         private async Task GetAllThumbnailsUrlsAsync()
