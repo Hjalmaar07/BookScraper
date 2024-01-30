@@ -5,7 +5,7 @@ namespace BookScraper.Driver.BooksToScrap;
 
 public class BooksToScrapRepository : IBooksToScrapRepository
 {
-    private const string PageUrl = "https://books.toscrape.com/";
+    private const string HomeUrl = "https://books.toscrape.com/";
     private HtmlDocument _document = new HtmlDocument();
     private string LocalFolderPath;
 
@@ -13,22 +13,15 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     {
         LogProgress("Getting list of pages...");
         BuildLocalFolderPath();
-        await CreateHtmlDocument(PageUrl);
-        await DownloadPages();
-
-        var pagesToTraverse = GetNodesForContains("a", "href", "/books/");
-        await TraverseCategories(pagesToTraverse);
-    }
-
-    public async Task GetAllThumbnailsUrlsAsync(string pageUrl, string name)
-    {
-        LogProgress($"Getting list of thumbnails for category: {name}...");
-        await CreateHtmlDocument(pageUrl);
+        await CreateHtmlDocument(HomeUrl);
+        await DownloadExternalLinks();
+        await DownloadCategoryPages();
+        await TraverseCategories(GetNodesForContains("a", "href", "/books/"));
     }
 
     private void CreateDirectory(string folder)
     {
-        DirectoryInfo di = Directory.CreateDirectory($"{LocalFolderPath}{folder}");
+        Directory.CreateDirectory($"{LocalFolderPath}{folder}");
     }
 
     private static async Task<string> CallUrlAsync(string url)
@@ -57,41 +50,31 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         {
             link = link.Substring(1);
         }
-        string folderPath = Path.GetDirectoryName(link);
-
-        return folderPath;
+        return Path.GetDirectoryName(link);
     }
 
-    private async Task DownloadPages()
+    private async Task DownloadExternalLinks()
     {
-        using (WebClient client = new WebClient())
-        {
-            var links = GetNodesForAny("a");
-            links.AddRange(GetNodesForAny("link"));
+        var pages = GetNodesForAny("link");
+        await DownloadFiles(pages, "href", false);
+    }
 
-            foreach (var link in links)
-            {
-                try
-                {
-                    CreateDirectory($"{GetFolderPathFromLink(link.GetAttributeValue("href", ""))}");
-                }
-                catch { }
-                var uri = new Uri($"{PageUrl}{link.GetAttributeValue("href", "")}");
-                client.DownloadFile($"{PageUrl}{uri.LocalPath}", $"{LocalFolderPath}{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
-            }
-        }
+    private async Task DownloadCategoryPages()
+    {
+        var pages = GetNodesForAny("a");
+        await DownloadFiles(pages, "href", false);
     }
 
     private async Task TraverseCategories(List<HtmlNode> pages)
     {
         foreach (var page in pages)
         {
-            await CreateHtmlDocument(PageUrl + page.GetAttributeValue("href", ""));
+            await CreateHtmlDocument(HomeUrl + page.GetAttributeValue("href", ""));
             await DownloadThumbnails();
-            var productsList = await GetProductPages();
+            var productsList = GetProductPages();
             foreach (var product in productsList)
             {
-                await CreateHtmlDocument(PageUrl + "catalogue/" + RemoveChildrenFromPath(product.GetAttributeValue("href", "")));
+                await CreateHtmlDocument(HomeUrl + "catalogue/" + RemoveChildrenFromPath(product.GetAttributeValue("href", "")));
                 await DownloadProductPage(product);
                 await DownloadProductPictures();
             }
@@ -100,24 +83,12 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     private async Task DownloadThumbnails()
     {
-        using (WebClient client = new WebClient())
-        {
-            var links = GetNodesForContains("img", "class", "thumbnail");
+        var pages = GetNodesForContains("img", "class", "thumbnail");
+        await DownloadFiles(pages, "src", false);
 
-            foreach (var link in links)
-            {
-                try
-                {
-                    CreateDirectory($"{GetFolderPathFromLink(RemoveChildrenFromPath(link.GetAttributeValue("src", "")))}");
-                }
-                catch { }
-                var uri = new Uri($"{PageUrl}{link.GetAttributeValue("src", "")}");
-                client.DownloadFile($"{PageUrl}{uri.LocalPath}", $"{LocalFolderPath}{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
-            }
-        }
     }
 
-    private async Task<List<HtmlNode>> GetProductPages()
+    private List<HtmlNode> GetProductPages()
     {
         var div = _document.DocumentNode.SelectNodes("//div[@class='image_container']");
         return div.Descendants("a")
@@ -125,40 +96,53 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         .ToList();
     }
 
-    private async Task DownloadProductPage(HtmlNode product)
+    private async Task DownloadProductPage(HtmlNode page)
     {
-        using (WebClient client = new WebClient())
-        {
-                try
-                {
-                    CreateDirectory($"catalogue\\{GetFolderPathFromLink(RemoveChildrenFromPath(product.GetAttributeValue("href", "")))}");
-                }
-                catch { }
-                var uri = new Uri($"{PageUrl}{product.GetAttributeValue("href", "")}");
-                client.DownloadFile($"{PageUrl}catalogue/{uri.LocalPath}", $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
-
-        }
+        DownloadFile(page, "href", true);
     }
 
     private async Task DownloadProductPictures()
     {
-        using (WebClient client = new WebClient())
-        {
-            var div = _document.DocumentNode.SelectNodes("//div[@class='item active']");
-            var links = div.Descendants("img")
-            .Where(node => node.GetAttributeValue("src", "").Any())
-            .ToList();
+        var div = _document.DocumentNode.SelectNodes("//div[@class='item active']");
+        var pages = div.Descendants("img")
+        .Where(node => node.GetAttributeValue("src", "").Any())
+        .ToList();
+        await DownloadFiles(pages, "src", false);
+    }
 
-            foreach (var link in links)
+    private async Task DownloadFiles(List<HtmlNode> pages, string attribute, bool categoryPage)
+    {
+        foreach(var page in pages)
+        {
+            await DownloadFile(page, attribute, categoryPage);
+        }
+    }
+
+    private async Task DownloadFile(HtmlNode page, string attribute, bool categoryPage)
+    {
+        try
+        {
+            var uri = new Uri($"{HomeUrl}{page.GetAttributeValue(attribute, "")}");
+            if(categoryPage)
             {
-                try
+                CreateDirectory($"catalogue\\{GetFolderPathFromLink(RemoveChildrenFromPath(page.GetAttributeValue(attribute, "")))}");
+                using (WebClient client = new WebClient())
                 {
-                    CreateDirectory($"{GetFolderPathFromLink(RemoveChildrenFromPath(link.GetAttributeValue("src", "")))}");
+                    client.DownloadFile($"{HomeUrl}catalogue/{uri.LocalPath}", $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
                 }
-                catch { }
-                var uri = new Uri($"{PageUrl}{link.GetAttributeValue("src", "")}");
-                client.DownloadFile($"{PageUrl}{uri.LocalPath}", $"{LocalFolderPath}\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
             }
+            else
+            {
+                CreateDirectory($"{GetFolderPathFromLink(RemoveChildrenFromPath(page.GetAttributeValue(attribute, "")))}");
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFile($"{HomeUrl}{uri.LocalPath}", $"{LocalFolderPath}\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
+                }
+            }
+        }
+        catch (Exception)
+        {
+            throw;
         }
     }
 
