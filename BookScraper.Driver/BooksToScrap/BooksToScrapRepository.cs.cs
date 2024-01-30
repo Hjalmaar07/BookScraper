@@ -17,7 +17,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         await DownloadPages();
 
         var pagesToTraverse = GetNodesForContains("a", "href", "/books/");
-        await TraversePages(pagesToTraverse);
+        await TraverseCategories(pagesToTraverse);
     }
 
     public async Task GetAllThumbnailsUrlsAsync(string pageUrl, string name)
@@ -82,13 +82,19 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         }
     }
 
-    private async Task TraversePages(List<HtmlNode> pages)
+    private async Task TraverseCategories(List<HtmlNode> pages)
     {
         foreach (var page in pages)
         {
             await CreateHtmlDocument(PageUrl + page.GetAttributeValue("href", ""));
             await DownloadThumbnails();
-            await DownloadProductPages();
+            var productsList = await GetProductPages();
+            foreach (var product in productsList)
+            {
+                await CreateHtmlDocument(PageUrl + "catalogue/" + RemoveChildrenFromPath(product.GetAttributeValue("href", "")));
+                await DownloadProductPage(product);
+                await DownloadProductPictures();
+            }
         }
     }
 
@@ -111,24 +117,47 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         }
     }
 
-    private async Task DownloadProductPages()
+    private async Task<List<HtmlNode>> GetProductPages()
+    {
+        var div = _document.DocumentNode.SelectNodes("//div[@class='image_container']");
+        return div.Descendants("a")
+        .Where(node => node.GetAttributeValue("href", "").Any())
+        .ToList();
+    }
+
+    private async Task DownloadProductPage(HtmlNode product)
     {
         using (WebClient client = new WebClient())
         {
-            var div = _document.DocumentNode.SelectNodes("//div[@class='image_container']");
-            var links = div.Descendants("a")
-            .Where(node => node.GetAttributeValue("href", "").Any())
+                try
+                {
+                    CreateDirectory($"catalogue\\{GetFolderPathFromLink(RemoveChildrenFromPath(product.GetAttributeValue("href", "")))}");
+                }
+                catch { }
+                var uri = new Uri($"{PageUrl}{product.GetAttributeValue("href", "")}");
+                client.DownloadFile($"{PageUrl}catalogue/{uri.LocalPath}", $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
+
+        }
+    }
+
+    private async Task DownloadProductPictures()
+    {
+        using (WebClient client = new WebClient())
+        {
+            var div = _document.DocumentNode.SelectNodes("//div[@class='item active']");
+            var links = div.Descendants("img")
+            .Where(node => node.GetAttributeValue("src", "").Any())
             .ToList();
 
             foreach (var link in links)
             {
                 try
                 {
-                    CreateDirectory($"catalogue\\{GetFolderPathFromLink(RemoveChildrenFromPath(link.GetAttributeValue("href", "")))}");
+                    CreateDirectory($"{GetFolderPathFromLink(RemoveChildrenFromPath(link.GetAttributeValue("src", "")))}");
                 }
                 catch { }
-                var uri = new Uri($"{PageUrl}{link.GetAttributeValue("href", "")}");
-                client.DownloadFile($"{PageUrl}catalogue/{uri.LocalPath}", $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
+                var uri = new Uri($"{PageUrl}{link.GetAttributeValue("src", "")}");
+                client.DownloadFile($"{PageUrl}{uri.LocalPath}", $"{LocalFolderPath}\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
             }
         }
     }
