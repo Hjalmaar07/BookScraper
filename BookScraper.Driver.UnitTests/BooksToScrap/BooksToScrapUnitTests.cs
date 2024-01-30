@@ -6,7 +6,6 @@ namespace BookScraper.Driver.UnitTests.BooksToScrap;
 public class BooksToScrapUnitTests
 {
     private static IBooksToScrapRepository _repository;
-    private const string PageUrl = "https://books.toscrape.com/";
 
     [SetUp]
     public void SetUp()
@@ -15,13 +14,8 @@ public class BooksToScrapUnitTests
     }
 
     [Test]
-    public async Task GivenCorrectUrl_WhenGetAllPages_ThenListOfPagesIsReturned()
+    public async Task WhenGetAllPagesAsync_ThenListOfPagesIsReturned()
     {
+        await _repository.GetAllPagesAsync();
     }
-
-    [Test]
-    public async Task GivenWrongUrl_WhenGetAllPages_ThenExceptionIsThrown()
-    {
-    }
-    
 }
