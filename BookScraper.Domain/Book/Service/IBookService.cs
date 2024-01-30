@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace BookScraper.Domain.Book.Service;
 
-namespace BookScraper.Domain.Book.Service
+public interface IBookService
 {
-    public interface IBookService
-    {
-        public void GetBooks();
-    }
+    public void GetBooks();
 }

@@ -18,24 +18,24 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         await DownloadCategoriesContent(GetNodesForContains("a", "href", "/books/"));
     }
 
+    private async Task CreateHtmlDocument(string pageUrl)
+    {
+        var htmlResult = await CallUrlAsync(pageUrl);
+        _document.LoadHtml(htmlResult);
+    }
+
     private static async Task<string> CallUrlAsync(string url)
     {
         try
         {
             HttpClient client = new HttpClient();
-            var response = await client.GetStringAsync(url);
-            return response;
+            return await client.GetStringAsync(url);
         }
         catch (Exception e)
         {
+            Console.WriteLine(e.Message);
             throw new Exception(e.Message);
         }
-    }
-
-    private async Task CreateHtmlDocument(string pageUrl)
-    {
-        var htmlResult = await CallUrlAsync(pageUrl);
-        _document.LoadHtml(htmlResult);
     }
 
     static string GetFolderPathFromLink(string link)

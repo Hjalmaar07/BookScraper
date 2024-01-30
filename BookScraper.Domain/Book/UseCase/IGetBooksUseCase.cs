@@ -1,7 +1,6 @@
-﻿namespace BookScraper.Domain.Book.UseCase
+﻿namespace BookScraper.Domain.Book.UseCase;
+
+public interface IGetBooksUseCase
 {
-    public interface IGetBooksUseCase
-    {
-        public void Run();
-    }
+    public void Run();
 }
