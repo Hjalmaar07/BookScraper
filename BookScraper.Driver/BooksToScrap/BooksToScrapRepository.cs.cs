@@ -11,17 +11,11 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     public async Task GetAllPagesAsync()
     {
-        LogProgress("Getting list of pages...");
         BuildLocalFolderPath();
         await CreateHtmlDocument(HomeUrl);
         await DownloadExternalLinks();
         await DownloadCategoryPages();
-        await TraverseCategories(GetNodesForContains("a", "href", "/books/"));
-    }
-
-    private void CreateDirectory(string folder)
-    {
-        Directory.CreateDirectory($"{LocalFolderPath}{folder}");
+        await DownloadCategoriesContent(GetNodesForContains("a", "href", "/books/"));
     }
 
     private static async Task<string> CallUrlAsync(string url)
@@ -56,25 +50,26 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     private async Task DownloadExternalLinks()
     {
         var pages = GetNodesForAny("link");
+
         await DownloadFiles(pages, "href", false);
     }
 
     private async Task DownloadCategoryPages()
     {
         var pages = GetNodesForAny("a");
+
         await DownloadFiles(pages, "href", false);
     }
 
-    private async Task TraverseCategories(List<HtmlNode> pages)
+    private async Task DownloadCategoriesContent(List<HtmlNode> pages)
     {
         foreach (var page in pages)
         {
             await CreateHtmlDocument(HomeUrl + page.GetAttributeValue("href", ""));
             await DownloadThumbnails();
-            var productsList = GetProductPages();
-            foreach (var product in productsList)
+            foreach (var product in GetProductPages())
             {
-                await CreateHtmlDocument(HomeUrl + "catalogue/" + RemoveChildrenFromPath(product.GetAttributeValue("href", "")));
+                await CreateHtmlDocument($"{HomeUrl}catalogue/{RemoveChildrenFromPath(product.GetAttributeValue("href", ""))}");
                 await DownloadProductPage(product);
                 await DownloadProductPictures();
             }
@@ -84,8 +79,8 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     private async Task DownloadThumbnails()
     {
         var pages = GetNodesForContains("img", "class", "thumbnail");
-        await DownloadFiles(pages, "src", false);
 
+        await DownloadFiles(pages, "src", false);
     }
 
     private List<HtmlNode> GetProductPages()
@@ -98,7 +93,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     private async Task DownloadProductPage(HtmlNode page)
     {
-        DownloadFile(page, "href", true);
+        await DownloadFile(page, "href", true);
     }
 
     private async Task DownloadProductPictures()
@@ -107,6 +102,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         var pages = div.Descendants("img")
         .Where(node => node.GetAttributeValue("src", "").Any())
         .ToList();
+
         await DownloadFiles(pages, "src", false);
     }
 
@@ -122,6 +118,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     {
         try
         {
+            LogProgress($"Downloading file: { page.GetAttributeValue(attribute, "" )}");
             var uri = new Uri($"{HomeUrl}{page.GetAttributeValue(attribute, "")}");
             if(categoryPage)
             {
@@ -140,8 +137,9 @@ public class BooksToScrapRepository : IBooksToScrapRepository
                 }
             }
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Console.WriteLine(e.Message);
             throw;
         }
     }
@@ -175,6 +173,11 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         }
 
         return string.Join("/", cleanParts, 0, cleanIndex);
+    }
+
+    private void CreateDirectory(string folder)
+    {
+        Directory.CreateDirectory($"{LocalFolderPath}{folder}");
     }
 
     private void LogProgress(string log)
