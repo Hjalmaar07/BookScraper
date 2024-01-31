@@ -199,6 +199,6 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     private void BuildLocalFolderPath()
     {
-        LocalFolderPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\Books\\";
+        LocalFolderPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\ScrapedBooks\\";
     }
 }
