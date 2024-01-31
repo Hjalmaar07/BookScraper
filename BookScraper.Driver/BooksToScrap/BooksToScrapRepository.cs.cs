@@ -16,6 +16,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         await DownloadExternalLinks();
         await DownloadCategoryPages();
         await DownloadCategoriesContent(GetNodesForContains("a", "href", "/books/"));
+        LogProgress("\n\n\n\nAll files have been successfully downloaded. You may now exit the application by pressing enter...");
     }
 
     private async Task CreateHtmlDocument(string pageUrl)
@@ -56,7 +57,11 @@ public class BooksToScrapRepository : IBooksToScrapRepository
 
     private async Task DownloadCategoryPages()
     {
-        var pages = GetNodesForAny("a");
+        var pages = _document.DocumentNode.Descendants("a")
+            .Where(node =>
+                node.GetAttributeValue("href", null) != null &&
+                !node.Ancestors("article").Any(a => a.Attributes["class"]?.Value == "product_pod"))
+            .ToList();
 
         await DownloadFiles(pages, "href", false);
     }
@@ -66,13 +71,15 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         foreach (var page in pages)
         {
             await CreateHtmlDocument(HomeUrl + page.GetAttributeValue("href", ""));
-            await DownloadThumbnails();
+            DownloadThumbnails();
+            DownloadProductPages();
+            var productPictures = new List<HtmlNode>();
             foreach (var product in GetProductPages())
             {
                 await CreateHtmlDocument($"{HomeUrl}catalogue/{RemoveChildrenFromPath(product.GetAttributeValue("href", ""))}");
-                await DownloadProductPage(product);
-                await DownloadProductPictures();
+                productPictures.AddRange(GetProductPictures());
             }
+            DownloadProductPictures(productPictures);
         }
     }
 
@@ -80,7 +87,12 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     {
         var pages = GetNodesForContains("img", "class", "thumbnail");
 
-        await DownloadFiles(pages, "src", false);
+        DownloadFiles(pages, "src", false);
+    }
+
+    private async Task DownloadProductPages()
+    {
+        DownloadFiles(GetProductPages(), "href", true);
     }
 
     private List<HtmlNode> GetProductPages()
@@ -91,27 +103,27 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         .ToList();
     }
 
-    private async Task DownloadProductPage(HtmlNode page)
+    private async Task DownloadProductPictures(List<HtmlNode> productPictures)
     {
-        await DownloadFile(page, "href", true);
+        DownloadFiles(productPictures, "src", false);
     }
 
-    private async Task DownloadProductPictures()
+    private List<HtmlNode> GetProductPictures()
     {
         var div = _document.DocumentNode.SelectNodes("//div[@class='item active']");
-        var pages = div.Descendants("img")
+        return div.Descendants("img")
         .Where(node => node.GetAttributeValue("src", "").Any())
         .ToList();
-
-        await DownloadFiles(pages, "src", false);
     }
 
     private async Task DownloadFiles(List<HtmlNode> pages, string attribute, bool categoryPage)
     {
+        List<Task> downloadTasks = new List<Task>();
         foreach(var page in pages)
         {
-            await DownloadFile(page, attribute, categoryPage);
+            downloadTasks.Add(DownloadFile(page, attribute, categoryPage));
         }
+        Task.WhenAll(downloadTasks);
     }
 
     private async Task DownloadFile(HtmlNode page, string attribute, bool categoryPage)
@@ -125,7 +137,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
                 CreateDirectory($"catalogue\\{GetFolderPathFromLink(RemoveChildrenFromPath(page.GetAttributeValue(attribute, "")))}");
                 using (WebClient client = new WebClient())
                 {
-                    client.DownloadFile($"{HomeUrl}catalogue/{uri.LocalPath}", $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
+                    client.DownloadFileAsync(new Uri($"{HomeUrl}catalogue/{uri.LocalPath}"), $"{LocalFolderPath}\\catalogue\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
                 }
             }
             else
@@ -133,7 +145,7 @@ public class BooksToScrapRepository : IBooksToScrapRepository
                 CreateDirectory($"{GetFolderPathFromLink(RemoveChildrenFromPath(page.GetAttributeValue(attribute, "")))}");
                 using (WebClient client = new WebClient())
                 {
-                    client.DownloadFile($"{HomeUrl}{uri.LocalPath}", $"{LocalFolderPath}\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
+                    client.DownloadFileAsync(new Uri($"{HomeUrl}{uri.LocalPath}"), $"{LocalFolderPath}\\{GetFolderPathFromLink(uri.LocalPath)}\\{Path.GetFileName(uri.LocalPath)}");
                 }
             }
         }
