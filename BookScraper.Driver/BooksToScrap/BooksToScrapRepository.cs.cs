@@ -12,14 +12,14 @@ public class BooksToScrapRepository : IBooksToScrapRepository
     public async Task GetAllPagesAsync()
     {
         BuildLocalFolderPath();
-        await CreateHtmlDocument(HomeUrl);
-        await DownloadExternalLinks();
-        await DownloadCategoryPages();
-        await DownloadCategoriesContent(GetNodesForContains("a", "href", "/books/"));
+        await CreateHtmlDocumentAsync(HomeUrl);
+        DownloadExternalLinks();
+        DownloadCategoryPages();
+        await DownloadCategoriesContentAsync(GetNodesForContains("a", "href", "/books/"));
         LogProgress("\n\n\n\nAll files have been successfully downloaded. You may now exit the application by pressing enter...");
     }
 
-    private async Task CreateHtmlDocument(string pageUrl)
+    private async Task CreateHtmlDocumentAsync(string pageUrl)
     {
         var htmlResult = await CallUrlAsync(pageUrl);
         _document.LoadHtml(htmlResult);
@@ -48,14 +48,14 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         return Path.GetDirectoryName(link);
     }
 
-    private async Task DownloadExternalLinks()
+    private void DownloadExternalLinks()
     {
         var pages = GetNodesForAny("link");
 
-        await DownloadFiles(pages, "href", false);
+        DownloadFilesAsync(pages, "href", false);
     }
 
-    private async Task DownloadCategoryPages()
+    private void DownloadCategoryPages()
     {
         var pages = _document.DocumentNode.Descendants("a")
             .Where(node =>
@@ -63,36 +63,36 @@ public class BooksToScrapRepository : IBooksToScrapRepository
                 !node.Ancestors("article").Any(a => a.Attributes["class"]?.Value == "product_pod"))
             .ToList();
 
-        await DownloadFiles(pages, "href", false);
+        DownloadFilesAsync(pages, "href", false);
     }
 
-    private async Task DownloadCategoriesContent(List<HtmlNode> pages)
+    private async Task DownloadCategoriesContentAsync(List<HtmlNode> pages)
     {
         foreach (var page in pages)
         {
-            await CreateHtmlDocument(HomeUrl + page.GetAttributeValue("href", ""));
+            await CreateHtmlDocumentAsync(HomeUrl + page.GetAttributeValue("href", ""));
             DownloadThumbnails();
             DownloadProductPages();
             var productPictures = new List<HtmlNode>();
             foreach (var product in GetProductPages())
             {
-                await CreateHtmlDocument($"{HomeUrl}catalogue/{RemoveChildrenFromPath(product.GetAttributeValue("href", ""))}");
+                await CreateHtmlDocumentAsync($"{HomeUrl}catalogue/{RemoveChildrenFromPath(product.GetAttributeValue("href", ""))}");
                 productPictures.AddRange(GetProductPictures());
             }
             DownloadProductPictures(productPictures);
         }
     }
 
-    private async Task DownloadThumbnails()
+    private void DownloadThumbnails()
     {
         var pages = GetNodesForContains("img", "class", "thumbnail");
 
-        DownloadFiles(pages, "src", false);
+        DownloadFilesAsync(pages, "src", false);
     }
 
-    private async Task DownloadProductPages()
+    private void DownloadProductPages()
     {
-        DownloadFiles(GetProductPages(), "href", true);
+        DownloadFilesAsync(GetProductPages(), "href", true);
     }
 
     private List<HtmlNode> GetProductPages()
@@ -103,9 +103,9 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         .ToList();
     }
 
-    private async Task DownloadProductPictures(List<HtmlNode> productPictures)
+    private void DownloadProductPictures(List<HtmlNode> productPictures)
     {
-        DownloadFiles(productPictures, "src", false);
+        DownloadFilesAsync(productPictures, "src", false);
     }
 
     private List<HtmlNode> GetProductPictures()
@@ -116,17 +116,17 @@ public class BooksToScrapRepository : IBooksToScrapRepository
         .ToList();
     }
 
-    private async Task DownloadFiles(List<HtmlNode> pages, string attribute, bool categoryPage)
+    private async Task DownloadFilesAsync(List<HtmlNode> pages, string attribute, bool categoryPage)
     {
         List<Task> downloadTasks = new List<Task>();
         foreach(var page in pages)
         {
-            downloadTasks.Add(DownloadFile(page, attribute, categoryPage));
+            downloadTasks.Add(DownloadFileAsync(page, attribute, categoryPage));
         }
         Task.WhenAll(downloadTasks);
     }
 
-    private async Task DownloadFile(HtmlNode page, string attribute, bool categoryPage)
+    private async Task DownloadFileAsync(HtmlNode page, string attribute, bool categoryPage)
     {
         try
         {
