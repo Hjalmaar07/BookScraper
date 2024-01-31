@@ -7,5 +7,6 @@ There are no unit tests as i could not fin a reliable way to test functionallity
 
 Installation & running the app
 There is no need to install anything. The folder for scraped website should be created automatically. There is no need to create it manually.
+To run the application just download the source code then build and run it using IDE.
 
 Application was developed and run on Windows 10. No testing on other platforms was done therefore proper functioning of the app is not guranateed.
